@@ -22,9 +22,9 @@ angular.module('mm.addons.mod_scorm')
  * @name $mmaModScormCourseContentHandler
  */
 .factory('$mmaModScormCourseContentHandler', function($mmCourse, $mmaModScorm, $state){
-	var self = {};
+    var self = {};
 
-	/**
+    /**
      * Whether or not the module is enabled for the site.
      *
      * @module mm.addons.mod_scorm
@@ -33,7 +33,7 @@ angular.module('mm.addons.mod_scorm')
      * @return {Boolean}
      */
 
-     self.isEnabled = function() {
+    self.isEnabled = function() {
         return $mmaModScorm.isPluginEnabled();
     };
 
@@ -48,7 +48,7 @@ angular.module('mm.addons.mod_scorm')
      * @return {Function}
      */
 
-     self.getController = function(module, courseid) {
+    self.getController = function(module, courseid) {
         return function($scope) {
             $scope.title = module.name;
             $scope.icon = $mmCourse.getModuleIconSrc('scorm');
