@@ -20,33 +20,38 @@ angular.module('mm.addons.mod_scorm')
  * @module mm.addons.mod_scorm
  * @ngdoc controller
  * @name $mmaModScorm
- */
+*/
 .factory('$mmaModScorm',function($q, $mmSite, $mmUtil){
-	var self = {};
+    var self = {};
 
-	 /**
+    /**
      * Get cache key for scorm data WS calls.
      *
      * @param {Number} courseid Course ID.
      * @return {String}         Cache key.
-     */
+    */
     function getScormDataCacheKey(courseid) {
         return 'mmaModScorm:scorm:' + courseid;
     }
 
-     /**
+    /**
      * Return whether or not the plugin is enabled. Plugin is enabled if the forum WS are available.
      *
      * @module mm.addons.mod_scorm
      * @ngdoc method
      * @name $mmaModScorm#isPluginEnabled
      * @return {Boolean} True if plugin is enabled, false otherwise.
-     */
+    */
     self.isPluginEnabled = function() {
-        return  $mmSite.wsAvailable('mod_scorm_get_scorms_by_courses');
+        return  $mmSite.wsAvailable('mod_scorm_get_scorms_by_courses')&&
+                $mmSite.wsAvailable('mod_scorm_get_scorm_attempts')&&
+                $mmSite.wsAvailable('mod_scorm_get_scorm_scoes')&&
+                $mmSite.wsAvailable('mod_scorm_insert_scorm_tracks')&&
+                $mmSite.wsAvailable('mod_scorm_get_scorm_user_data')&&
+                $mmSite.wsAvailable('mod_scorm_get_scorm_sco_tracks');
     };
 
-     /**
+    /**
      * Get a scorm.
      *
      * @module mm.addons.mod_scorm
@@ -55,7 +60,7 @@ angular.module('mm.addons.mod_scorm')
      * @param {Number} courseid Course ID.
      * @param {Number} cmid     Course module ID.
      * @return {Promise}        Promise resolved when the scorm is retrieved.
-     */
+    */
     self.getScorm = function(courseid, cmid) {
         var params = {
                 courseids: [courseid]
@@ -65,13 +70,22 @@ angular.module('mm.addons.mod_scorm')
             };
 
         return $mmSite.read('mod_scorm_get_scorms_by_courses', params, preSets).then(function(scorms) {
-            var currentScorm;
-            angular.forEach(scorms, function(scorm) {
-                if (scorm.cmid == cmid) {
-                    currentScorm = scorm;
-                }
-            });
-            return currentScorm;
+            if(scorms){
+            
+                var currentScorm ;
+                angular.forEach(scorms, function(scorm) {
+                
+                    angular.forEach(scorm,function(key){
+                        if (key.coursemodule == cmid) {
+                            currentScorm = key;
+                        }
+                    })
+                });
+                return currentScorm;
+            }
+            else{
+                return $q.reject();
+            }
         });
     };
 
