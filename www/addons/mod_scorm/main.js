@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+// http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,24 +17,24 @@ angular.module('mm.addons.mod_scorm',[])
 .constant('mmaModScormComponent', 'mmaModScorm')
 
 .config(function($stateProvider){
-	
-	$stateProvider
-	
-	.state('site.mod_scorm',{
-		url : '/mod_scorm',
-		params : {
-			module: null,
-			courseid: null
-		},
-		views : {
-			'site':{
-				controller: 'mmaModScormDetailsCtrl',
-				templateUrl: 'addons/mod_scorm/templates/details.html'
-			}
-		}
-	});
+    
+    $stateProvider
+    
+    .state('site.mod_scorm',{
+        url : '/mod_scorm',
+        params : {
+            module: null,
+            courseid: null
+        },
+        views : {
+            'site':{
+                controller: 'mmaModScormDetailsCtrl',
+                templateUrl: 'addons/mod_scorm/templates/index.html'
+            }
+        }
+    });
 })
 
 .config(function($mmCourseDelegateProvider){
-	 $mmCourseDelegateProvider.registerContentHandler('mmaModScorm', 'scorm', '$mmaModScormCourseContentHandler');
+    $mmCourseDelegateProvider.registerContentHandler('mmaModScorm', 'scorm', '$mmaModScormCourseContentHandler');
 });
