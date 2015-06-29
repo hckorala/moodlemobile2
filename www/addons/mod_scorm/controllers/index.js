@@ -24,7 +24,7 @@ angular.module('mm.addons.mod_scorm')
     $scope.moduleurl = module.url;
     $scope.courseid = courseid;
 
-    //Function to get scorm package data 
+    //Function to get scorm package data and handle errors when data is not recieved or incorrect
     function fetchScormData(){
         return $mmaModScorm.getScorm(courseid,module.id).then(function(scormdata){
             if(scormdata){
