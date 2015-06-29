@@ -21,7 +21,7 @@ angular.module('mm.addons.messages')
  * @ngdoc service
  * @name $mmaMessages
  */
-.factory('$mmaMessages', function($mmSite, $log, $q) {
+.factory('$mmaMessages', function($mmSite, $mmSitesManager, $log, $q, $mmUser, mmaMessagesIndexState) {
     $log = $log.getInstance('$mmaMessages');
 
     var self = {};
@@ -72,10 +72,12 @@ angular.module('mm.addons.messages')
         return self.getContacts().then(function(contacts) {
             return self.getBlockedContacts().then(function(blocked) {
                 contacts.blocked = blocked.users;
+                storeUsersFromAllContacts(contacts);
                 return contacts;
             }, function() {
                 // The WS for blocked contacts might not be available yet, but we still want the contacts.
                 contacts.blocked = [];
+                storeUsersFromAllContacts(contacts);
                 return contacts;
             });
         });
@@ -161,6 +163,19 @@ angular.module('mm.addons.messages')
      */
     self._getCacheKeyForDiscussions = function() {
         return 'mmaMessages:discussions';
+    };
+
+    /**
+     * Get the cache key for the messaging enabled call.
+     *
+     * @module mm.addons.messages
+     * @ngdoc method
+     * @name $mmaMessages#_getCacheKeyForEnabled
+     * @return {String}
+     * @protected
+     */
+    self._getCacheKeyForEnabled = function() {
+        return 'mmaMessages:enabled';
     };
 
     /**
@@ -326,10 +341,23 @@ angular.module('mm.addons.messages')
                         }
                     });
 
+                    storeUsersFromDiscussions(discussions);
                     return discussions;
                 });
             });
         });
+    };
+
+    /**
+     * Get the name of the messages index state.
+     *
+     * @module mm.addons.messages
+     * @ngdoc method
+     * @name $mmaMessages#getIndexState
+     * @return {String} State name.
+     */
+    self.getIndexState = function() {
+        return mmaMessagesIndexState;
     };
 
     /**
@@ -465,6 +493,18 @@ angular.module('mm.addons.messages')
     };
 
     /**
+     * Invalidate messaging enabled cache.
+     *
+     * @module mm.addons.messages
+     * @ngdoc method
+     * @name $mmaMessages#invalidateEnabledCache
+     * @return {Promise}
+     */
+    self.invalidateEnabledCache = function() {
+        return $mmSite.invalidateWsCacheForKey(self._getCacheKeyForEnabled());
+    };
+
+    /**
      * Checks if the a user is blocked by the current user.
      *
      * @module mm.addons.messages
@@ -538,7 +578,8 @@ angular.module('mm.addons.messages')
                 searchtext: 'CheckingIfMessagingIsEnabled',
                 onlymycourses: 0
             }, {
-                emergencyCache: false
+                emergencyCache: false,
+                cacheKey: self._getCacheKeyForEnabled()
             });
         }
 
@@ -549,6 +590,36 @@ angular.module('mm.addons.messages')
             deferred.reject();
         }
         return deferred.promise;
+    };
+
+   /**
+     * Returns whether or not messaging is enabled for a certain site.
+     *
+     * This could call a WS so do not abuse this method.
+     *
+     * @module mm.addons.messages
+     * @ngdoc method
+     * @name $mmaMessages#isMessagingEnabledForSite
+     * @param {String} siteid Site ID.
+     * @return {Promise}      Resolved when enabled, otherwise rejected.
+     */
+    self.isMessagingEnabledForSite = function(siteid) {
+        return $mmSitesManager.getSite(siteid).then(function(site) {
+            if (!site.canUseAdvancedFeature('messaging') || !site.wsAvailable('core_message_get_messages')) {
+                return $q.reject();
+            }
+
+            // On older version we cannot check other than calling a WS. If the request
+            // fails there is a very high chance that messaging is disabled.
+            $log.debug('Using WS call to check if messaging is enabled.');
+            return site.read('core_message_search_contacts', {
+                searchtext: 'CheckingIfMessagingIsEnabled',
+                onlymycourses: 0
+            }, {
+                emergencyCache: false,
+                cacheKey: self._getCacheKeyForEnabled()
+            });
+        });
     };
 
     /**
@@ -631,6 +702,7 @@ angular.module('mm.addons.messages')
             if (limit && contacts.length > limit) {
                 contacts = contacts.splice(0, limit);
             }
+            $mmUser.storeUsers(contacts);
             return contacts;
         });
     };
@@ -675,6 +747,28 @@ angular.module('mm.addons.messages')
             return a >= b ? 1 : -1;
         });
     };
+
+    /**
+     * Store user data from contacts in local DB.
+     *
+     * @param {Object[]} contactTypes List of contacts grouped in types.
+     */
+    function storeUsersFromAllContacts(contactTypes) {
+        angular.forEach(contactTypes, function(contacts) {
+            $mmUser.storeUsers(contacts);
+        });
+    }
+
+    /**
+     * Store user data from discussions in local DB.
+     *
+     * @param {Object[]} discussions List of discussions.
+     */
+    function storeUsersFromDiscussions(discussions) {
+        angular.forEach(discussions, function(discussion, userid) {
+            $mmUser.storeUser(userid, discussion.fullname, discussion.profileimageurl);
+        });
+    }
 
     /**
      * Unblock a user.
