@@ -17,8 +17,7 @@ angular.module('mm.addons.mod_scorm')
 .controller('mmaModScormDetailsCtrl', function($scope, $stateParams, $mmaModScorm, $mmSite, $mmUtil){
 
     var module = $stateParams.module || {},
-        courseid = $stateParams.courseid,
-        scorm ;
+        courseid = $stateParams.courseid ;
 
     $scope.title = module.name;
     $scope.description = module.description;
