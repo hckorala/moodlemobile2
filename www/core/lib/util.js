@@ -260,10 +260,7 @@ angular.module('mm.core')
                 angular.forEach(files, function(localPath, iframePath) {
                     var promise,
                         path = iframeDir + '/' + iframePath;
-                    promise = $mmFS.createFile(path).then(function() {
-                        // We call createFile to ensure that the path exists.
-                        return $mmFS.copyFile(localPath, path);
-                    });
+                    promise = $mmFS.copyFile(localPath, path);
                     promises.push(promise);
                 });
                 return $q.all(promises);
@@ -329,28 +326,29 @@ angular.module('mm.core')
 
                 } else if (ionic.Platform.isIOS() && typeof handleDocumentWithURL == 'function') {
 
-                    var fsRoot = $mmFS.getRoot();
-                    // Encode/decode the specific file path, note that a path may contain directories
-                    // with white spaces, special characters...
-                    if (path.indexOf(fsRoot > -1)) {
-                        path = path.replace(fsRoot, "");
-                        path = encodeURIComponent(decodeURIComponent(path));
-                        path = fsRoot + path;
-                    }
+                    $mmFS.getBasePath().then(function(fsRoot) {
+                        // Encode/decode the specific file path, note that a path may contain directories
+                        // with white spaces, special characters...
+                        if (path.indexOf(fsRoot > -1)) {
+                            path = path.replace(fsRoot, "");
+                            path = encodeURIComponent(decodeURIComponent(path));
+                            path = fsRoot + path;
+                        }
 
-                    handleDocumentWithURL(
-                        function() {
-                            $log.debug('File opened with handleDocumentWithURL' + path);
-                        },
-                        function(error) {
-                            $log.debug('Error opening with handleDocumentWithURL' + path);
-                            if(error == 53) {
-                                $log.error('No app that handles this file type.');
-                            }
-                            self.openInBrowser(path);
-                        },
-                        path
-                    );
+                        handleDocumentWithURL(
+                            function() {
+                                $log.debug('File opened with handleDocumentWithURL' + path);
+                            },
+                            function(error) {
+                                $log.debug('Error opening with handleDocumentWithURL' + path);
+                                if(error == 53) {
+                                    $log.error('No app that handles this file type.');
+                                }
+                                self.openInBrowser(path);
+                            },
+                            path
+                        );
+                    });
                 } else {
                     // Last try, launch the file with the browser.
                     self.openInBrowser(path);

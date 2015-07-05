@@ -21,7 +21,7 @@ angular.module('mm.addons.mod_resource')
  * @ngdoc service
  * @name $mmaModResourceCourseContentHandler
  */
-.factory('$mmaModResourceCourseContentHandler', function($mmCourse, $mmaModResource, $mmFilepool, $mmEvents, $state) {
+.factory('$mmaModResourceCourseContentHandler', function($mmCourse, $mmaModResource, $mmFilepool, $mmEvents, $state, $mmUtil) {
     var self = {};
 
     /**
@@ -61,7 +61,7 @@ angular.module('mm.addons.mod_resource')
                         if (Object.keys(observers).length < 1) {
                             $scope.spinner = false;
                             downloadBtn.hidden = true;
-                            refreshBtn.hidden = false;
+                            refreshBtn.hidden = true;
                         }
                     });
                 });
@@ -104,7 +104,16 @@ angular.module('mm.addons.mod_resource')
             };
 
             $scope.title = module.name;
-            $scope.icon = $mmCourse.getModuleIconSrc('resource');
+
+            var filename = module.contents[0].filename;
+            var extension = $mmUtil.getFileExtension(filename);
+
+            if (module.contents.length == 1 || (extension != "html" && extension != "htm")) {
+                $scope.icon = $mmUtil.getFileIcon(filename);
+            } else {
+                $scope.icon = $mmCourse.getModuleIconSrc('resource');
+            }
+
             $scope.action = function(e) {
                 $state.go('site.mod_resource', {module: module});
             };
@@ -117,7 +126,7 @@ angular.module('mm.addons.mod_resource')
                 } else if (result.status == $mmFilepool.FILEDOWNLOADING) {
                     $scope.spinner = true;
                     addObservers(result.eventNames);
-                } else {
+                } else if (result.status == $mmFilepool.FILEOUTDATED) {
                     refreshBtn.hidden = false;
                 }
             });

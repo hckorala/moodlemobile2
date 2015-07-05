@@ -273,17 +273,21 @@ angular.module('mm.core')
 
         candidateSite.fetchSiteInfo().then(function(infos) {
             if (isValidMoodleVersion(infos.functions)) {
-                var siteid = self.createSiteID(infos.siteurl, infos.username);
-                // Add site to sites list.
-                self.addSite(siteid, siteurl, token, infos);
-                // Turn candidate site into current site.
-                candidateSite.setId(siteid);
-                candidateSite.setInfo(infos);
-                currentSite = candidateSite;
-                // Store session.
-                self.login(siteid);
-                $mmEvents.trigger(mmCoreEventSiteAdded);
-                deferred.resolve();
+                if (isValidInfo(infos)) {
+                    var siteid = self.createSiteID(infos.siteurl, infos.username);
+                    // Add site to sites list.
+                    self.addSite(siteid, siteurl, token, infos);
+                    // Turn candidate site into current site.
+                    candidateSite.setId(siteid);
+                    candidateSite.setInfo(infos);
+                    currentSite = candidateSite;
+                    // Store session.
+                    self.login(siteid);
+                    $mmEvents.trigger(mmCoreEventSiteAdded);
+                    deferred.resolve();
+                } else {
+                    $mmLang.translateErrorAndReject(deferred, 'mm.login.cannotdownloadfiles');
+                }
             } else {
                 $mmLang.translateErrorAndReject(deferred, 'mm.login.invalidmoodleversion');
             }
@@ -353,7 +357,17 @@ angular.module('mm.core')
             }
         }
         return false;
-    };
+    }
+
+    /**
+     * Check if site info is valid (downloadfiles enabled).
+     *
+     * @param {Object} infos Site info.
+     * @return {Boolean}     True if the site info is valid, false otherwise.
+     */
+    function isValidInfo(infos) {
+        return typeof infos.downloadfiles == 'undefined' || infos.downloadfiles === 1;
+    }
 
     /**
      * Saves a site in local DB.
@@ -393,7 +407,15 @@ angular.module('mm.core')
             currentSite = site;
             self.login(siteid);
             // Update site info. Resolve the promise even if the update fails.
-            self.updateSiteInfo(siteid).finally(deferred.resolve);
+            self.updateSiteInfo(siteid).finally(function() {
+                var infos = site.getInfo();
+                if (!isValidInfo(infos)) {
+                    $mmLang.translateErrorAndReject(deferred, 'mm.login.cannotdownloadfiles');
+                    self.logout();
+                } else {
+                    deferred.resolve();
+                }
+            });
         }, deferred.reject);
 
         return deferred.promise;
@@ -557,81 +579,6 @@ angular.module('mm.core')
     };
 
     /**
-     * DANI: I don't like this function in here, but it's the only service that has the needed data.
-     * Maybe a new service?
-     *
-     * This function downloads a file from Moodle. If the file is already downloaded, the function replaces
-     * the www reference with the internal file system reference
-     *
-     * @module mm.core
-     * @ngdoc method
-     * @name $mmSitesManager#getMoodleFilePath
-     * @param  {String} fileurl The file path (usually a url).
-     * @return {Promise}        Promise to be resolved with the downloaded URL.
-     */
-    self.getMoodleFilePath = function (fileurl, courseId, siteId) {
-
-        // This function is used in regexp callbacks, better not to risk!!
-        if (!fileurl) {
-            return $q.reject();
-        }
-
-        if (!courseId) {
-            courseId = 1;
-        }
-
-        if (!siteId) {
-            if (typeof currentSite == 'undefined') {
-                return $q.reject();
-            }
-            siteId = currentSite.getId();
-        }
-
-        return self.getSite(siteId).then(function(site) {
-
-            var downloadURL = site.fixPluginfileURL(fileurl);
-            var extension = "." + fileurl.split('.').pop();
-            if (extension.indexOf(".php") === 0) {
-                extension = "";
-            }
-
-            var filename = md5.createHash(fileurl) + extension;
-
-            var path = {
-                directory: siteId + "/" + courseId,
-                file:      siteId + "/" + courseId + "/" + filename
-            };
-
-            var getFileFromFS = (function() {
-                if ($mmFS.isAvailable()) {
-                    return $mmFS.getFile(path.file);
-                }
-                return $q.reject();
-            })();
-
-            return getFileFromFS.then(function(fileEntry) {
-                // We use toInternalURL so images are loaded in iOS8 using img HTML tags,
-                // with toURL the OS is unable to find the image files.
-                $log.debug('File ' + downloadURL + ' already downloaded.');
-                return fileEntry.toInternalURL();
-            }, function() {
-                if ($mmApp.isOnline()) {
-                    $log.debug('File ' + downloadURL + ' not downloaded. Lets download.');
-                    return $mmWS.downloadFile(downloadURL, path.file).then(function(fileEntry) {
-                        return fileEntry.toInternalURL();
-                    }, function(err) {
-                        return downloadURL;
-                    });
-                } else {
-                    $log.debug('File ' + downloadURL + ' not downloaded, but the device is offline.');
-                    return downloadURL;
-                }
-
-            });
-        });
-    };
-
-    /**
      * Login the user in a site.
      *
      * @module mm.core
@@ -679,6 +626,8 @@ angular.module('mm.core')
             var siteid = current_site.siteid;
             $log.debug('Restore session in site '+siteid);
             return self.loadSite(siteid);
+        }, function() {
+            return $q.reject(); // Reject without params.
         });
     };
 
