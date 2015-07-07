@@ -15,7 +15,10 @@
 angular.module('mm.addons.messages', [])
 
 .constant('mmaMessagesPollInterval', 5000)
-.value('mmaMessagesIndexState', 'site.messages')
+.value('mmaMessagesPriority', 600)
+.value('mmaMessagesSendMessagePriority', 1000)
+.value('mmaMessagesAddContactPriority', 800)
+.value('mmaMessagesBlockContactPriority', 600)
 
 .config(function($stateProvider) {
 
@@ -46,8 +49,9 @@ angular.module('mm.addons.messages', [])
 
 })
 
-.run(function($mmSideMenuDelegate, $mmaMessages, $mmUserDelegate, $mmaMessagesHandlers, $mmEvents, $state, $injector, $mmUtil,
-            mmCoreEventLogin) {
+.run(function($mmSideMenuDelegate, $mmaMessages, $mmUserDelegate, $mmaMessagesHandlers, $mmEvents, $state, $mmAddonManager,
+            $mmUtil, mmCoreEventLogin, mmaMessagesPriority, mmaMessagesSendMessagePriority, mmaMessagesAddContactPriority,
+            mmaMessagesBlockContactPriority) {
 
     $mmSideMenuDelegate.registerPlugin('mmaMessages', function() {
 
@@ -63,11 +67,11 @@ angular.module('mm.addons.messages', [])
             };
         });
 
-    });
+    }, mmaMessagesPriority);
 
-    $mmUserDelegate.registerPlugin('mmaMessages:sendMessage', $mmaMessagesHandlers.sendMessage);
-    $mmUserDelegate.registerPlugin('mmaMessages:addContact', $mmaMessagesHandlers.addContact);
-    $mmUserDelegate.registerPlugin('mmaMessages:blockContact', $mmaMessagesHandlers.blockContact);
+    $mmUserDelegate.registerPlugin('mmaMessages:sendMessage', $mmaMessagesHandlers.sendMessage, mmaMessagesSendMessagePriority);
+    $mmUserDelegate.registerPlugin('mmaMessages:addContact', $mmaMessagesHandlers.addContact, mmaMessagesAddContactPriority);
+    $mmUserDelegate.registerPlugin('mmaMessages:blockContact', $mmaMessagesHandlers.blockContact, mmaMessagesBlockContactPriority);
 
     // Invalidate messaging enabled WS calls.
     $mmEvents.on(mmCoreEventLogin, function() {
@@ -75,9 +79,8 @@ angular.module('mm.addons.messages', [])
     });
 
     // Register push notification clicks.
-    try {
-        // Use injector because the delegate belongs to an addon, so it might not exist.
-        var $mmPushNotificationsDelegate = $injector.get('$mmPushNotificationsDelegate');
+    var $mmPushNotificationsDelegate = $mmAddonManager.get('$mmPushNotificationsDelegate');
+    if ($mmPushNotificationsDelegate) {
         $mmPushNotificationsDelegate.registerHandler('mmaMessages', function(notification) {
             if ($mmUtil.isFalseOrZero(notification.notif)) {
                 $mmaMessages.isMessagingEnabledForSite(notification.site).then(function() {
@@ -88,8 +91,6 @@ angular.module('mm.addons.messages', [])
                 return true;
             }
         });
-    } catch(ex) {
-        $log.error('Cannot register push notifications handler: delegate not found');
     }
 
 });
