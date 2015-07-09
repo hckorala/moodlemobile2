@@ -44,6 +44,29 @@ angular.module('mm.core.course')
         ];
 
     /**
+     * Clear all modules status in a site.
+     *
+     * @module mm.core.course
+     * @ngdoc method
+     * @name $mmCourse#clearAllModulesStatus
+     * @param {String} siteId Site ID.
+     * @return {Promise}      Promise resolved when all status are cleared.
+     */
+    self.clearAllModulesStatus = function(siteId) {
+        var promises = [];
+        $log.debug('Clear all module status for site ' + siteId);
+        return $mmSitesManager.getSite(siteId).then(function(site) {
+            var db = site.getDb();
+            return db.getAll(mmCoreCourseModulesStore).then(function(entries) {
+                angular.forEach(entries, function(entry) {
+                    promises.push(db.remove(mmCoreCourseModulesStore, entry.id));
+                });
+                return $q.all(promises);
+            });
+        });
+    };
+
+    /**
      * Get a module from Moodle.
      *
      * @module mm.core.course
@@ -125,6 +148,27 @@ angular.module('mm.core.course')
         }
 
         return "img/mod/" + moduleName + ".svg";
+    };
+
+    /**
+     * Get a module previous status.
+     *
+     * @module mm.core.course
+     * @ngdoc method
+     * @name $mmCourse#getModulePreviousStatus
+     * @param {String} siteId Site ID.
+     * @param {Number} id     Module ID.
+     * @return {Promise}      Promise resolved with the status.
+     */
+    self.getModulePreviousStatus = function(siteId, id) {
+        return $mmSitesManager.getSite(siteId).then(function(site) {
+            var db = site.getDb();
+            return db.get(mmCoreCourseModulesStore, id).then(function(module) {
+                return module.previous || $mmFilepool.FILENOTDOWNLOADED;
+            }, function() {
+                return $mmFilepool.FILENOTDOWNLOADED;
+            });
+        });
     };
 
     /**
@@ -316,12 +360,21 @@ angular.module('mm.core.course')
         timemodified = timemodified || 0;
         return $mmSitesManager.getSite(siteId).then(function(site) {
             var db = site.getDb();
-            return db.insert(mmCoreCourseModulesStore, {
-                id: id,
-                status: status,
-                revision: revision,
-                timemodified: timemodified,
-                updated: new Date().getTime()
+
+            // Search current status to set it as previous status.
+            return db.get(mmCoreCourseModulesStore, id).then(function(module) {
+                return module.status;
+            }, function() {
+                return undefined;
+            }).then(function(previousStatus) {
+                return db.insert(mmCoreCourseModulesStore, {
+                    id: id,
+                    status: status,
+                    previous: previousStatus,
+                    revision: revision,
+                    timemodified: timemodified,
+                    updated: new Date().getTime()
+                });
             });
         });
     };

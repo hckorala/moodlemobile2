@@ -81,11 +81,11 @@ angular.module('mm.addons.mod_resource')
      *
      * @module mm.addons.mod_resource
      * @ngdoc method
-     * @name $mmaModResource#getDownloadedFilesEventNames
+     * @name $mmaModResource#getDownloadingFilesEventNames
      * @param {Object} module The module object returned by WS.
      * @return {Promise} Resolved with an array of event names.
      */
-    self.getDownloadedFilesEventNames = function(module) {
+    self.getDownloadingFilesEventNames = function(module) {
         var promises = [],
             eventNames = [],
             notDownloaded = 0,
@@ -233,7 +233,7 @@ angular.module('mm.addons.mod_resource')
                         var href = decodeURIComponent(anchor.getAttribute('href')),
                             url = paths[href],
                             ext = $mmUtil.getFileExtension(href);
-                        if (typeof href !== 'undefined') {
+                        if (typeof url !== 'undefined') {
                             anchor.setAttribute('href', url);
                             if (ext == 'html' || ext == 'html') {
                                 anchor.setAttribute('mma-mod-resource-html-link', 1);
