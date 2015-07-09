@@ -1,7 +1,31 @@
 <ion-view>
-    <ion-nav-title><p><mm-format-text watch="true" clean="true" shorten="150">{{title}}</mm-format-text></p>  </ion-nav-title>
+    <ion-nav-title>
+    <p><mm-format-text watch="true" clean="true" shorten="150">{{title}}</mm-format-text></p>
+    </ion-nav-title>
     <ion-content>
-            <mm-course-mod-description watch="true" description="description">
-            </mm-course-mod-description>
+        <mm-course-mod-description watch="true" description="description"></mm-course-mod-description>
+        <div class="list">
+            <div class="card">
+                <div class="item item-body">
+                    <div ng-if="maxattempt==0">
+                        <p>Number of attempts allowed: Unlimited</P>
+                    </div>
+                    <div ng-if="maxattempt!=0">
+                        <p>Number of attempts allowed: {{maxattempt}}</P>
+                    </div>
+                    <p>Number of attempts you have made: {{attemptCount}}</P>
+                    <div ng-switch on="grademethod">
+                        <p ng-switch-when="0" >Grading method:Learning Objects</P>
+                        <p ng-switch-when="1" >Grading method:Highest Grade</P>
+                        <p ng-switch-when="2" >Grading method:Average Grade</P>
+                        <p ng-switch-when="3" >Grading method:Sum grade </P>
+                    </div>
+                    <p>Maximum grade :{{maxgrade}}</P>  
+                    <p>Attempts Remaining : {{attemptMessage}}</P>
+                    <p>{{timeopenMessage}}</P>  
+                    <p>{{errorMessage}}</p>
+                </div>
+            </div>
+        </div>
     </ion-content>
 </ion-view>
