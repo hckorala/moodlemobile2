@@ -23,16 +23,45 @@ angular.module('mm.addons.mod_scorm')
     $scope.description = module.description;
     $scope.moduleurl = module.url;
     $scope.courseid = courseid;
+    $scope.userid = $mmSite.getUserId();
 
     //Function to get scorm package data and handle errors when data is not recieved or incorrect
     function fetchScormData(){
         return $mmaModScorm.getScorm(courseid,module.id).then(function(scormdata){
             if(scormdata){
-              var scorm = scormdata;
+                var scorm = scormdata;
+                $scope.packageSize = scorm.packagesize; 
+                $scope.scormid = scorm.id ; 
 
-                $scope.packageSize = scorm.packagesize;     
+                //Retrieving data that needs to be displayed when the scorm package is clicked   
+                $scope.grademethod = scorm.grademethod;
+                $scope.maxattempt = scorm.maxattempt;
+                $scope.maxgrade = scorm.maxgrade;
+                
+                if($scope.packageSize){
 
-                if(!$scope.packageSize){
+                    //Handling the time open settings
+                    $scope.scormopen = true ;
+                    var timeopen = scorm.timeopen,
+                        timeclose = scorm.timeclose,
+                        time =  new Date().getTime(),
+                        nowtime = Math.round(time/1000);
+
+                    if((timeopen) && timeopen > nowtime){
+                        $scope.timeopenMessage = "Scorm package is not opened yet" ;
+                        $scope.scormopen = false;
+                    }
+                    if((timeclose) && nowtime > timeclose){
+                        $scope.timeopenMessage = "Scorm package is expired " ;
+                        $scope.scormopen = false;   
+                    }
+                    else{
+                        $scope.timeopenMessage = "Scorm package was opened" ;
+                    }
+
+                    fetchScormAttempts($scope.scormid,$scope.userid,$scope.maxattempt);    
+                }
+                else{
                     $mmUtil.showErrorModal('mma.mod_scorm.errorgetscorm', true);
                 } 
                 
@@ -41,9 +70,48 @@ angular.module('mm.addons.mod_scorm')
                 $mmUtil.showErrorModal('mma.mod_scorm.errorgetscorm', true);
             }
         },function(message){
-            $mmUtil.showErrorModal(message);
+            $scope.errorMessage = message ;
         });
 
+    }
+
+    //Function to fetch scorm attempts data
+    function fetchScormAttempts(scormid,userid,maxattempt){
+        return $mmaModScorm.getScormAttempt(scormid,userid).then(function(attempts){
+            if(attempts){
+                $scope.attemptCount = attempts.id;
+
+                attemptManager(maxattempt,$scope.attemptCount);
+
+                //fetchScormUserData(scormid,$scope.attemptcount);
+            }
+        },function(message){
+            $scope.errorMessage = message ;
+        });
+    }
+
+    //function to manage attempts 
+    function attemptManager(maxattempt,attemptcount){
+
+        if(maxattempt!=0){
+            var attemptremaining = maxattempt - attemptcount;
+
+            $scope.attemptMessage = attemptremaining;
+        }
+        else{
+            $scope.attemptMessage = "Unlimited number of attempts available";
+        }
+    }
+
+    //function to fetch scorm user data
+    function fetchScormUserData(scormid,attemptid){
+        return $mmaModScorm.getScormUserDetails(scormid,attemptid).then(function(userdata){
+            if(userdata){
+                var userData = userdata;
+            }
+        },function(message){
+           $scope.errorMessage = message ;
+        })
     }
 
     fetchScormData();
