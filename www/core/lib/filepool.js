@@ -507,6 +507,9 @@ angular.module('mm.core')
                     }
                     self._notifyFileDownloaded(siteId, fileId);
                     return response;
+                }, function(err) {
+                    self._notifyFileDownloadError(siteId, fileId);
+                    return $q.reject(err);
                 });
             });
         } else {
@@ -1037,6 +1040,30 @@ angular.module('mm.core')
         }
 
         return extension;
+    };
+
+    /**
+     * Invalidate all the files in a site.
+     *
+     * @module mm.core
+     * @ngdoc method
+     * @name $mmFilepool#invalidateAllFiles
+     * @param {String} siteId The site ID.
+     * @return {Promise} Resolved on success. Rejected on failure. It is advised to ignore a failure.
+     * @description
+     * Invalidates all files by marking it stale. See {@link $mmFilepool#invalidateFileByUrl} for more details.
+     */
+    self.invalidateAllFiles = function(siteId) {
+        return getSiteDb(siteId).then(function(db) {
+            return db.getAll(mmFilepoolStore).then(function(items) {
+                var promises = [];
+                angular.forEach(items, function(item) {
+                    item.stale = true;
+                    promises.push(db.insert(mmFilepoolStore, item));
+                });
+                return $q.all(promises);
+            });
+        });
     };
 
     /**

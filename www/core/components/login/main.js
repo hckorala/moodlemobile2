@@ -51,14 +51,7 @@ angular.module('mm.core.login', [])
     .state('mm_login.site', {
         url: '/site',
         templateUrl: 'core/components/login/templates/site.html',
-        controller: 'mmLoginSiteCtrl',
-        onEnter: function($ionicNavBarDelegate, $ionicHistory, $mmSitesManager) {
-            // Don't show back button if there are no sites.
-            $mmSitesManager.hasNoSites().then(function() {
-                $ionicNavBarDelegate.showBackButton(false);
-                $ionicHistory.clearHistory();
-            });
-        }
+        controller: 'mmLoginSiteCtrl'
     })
 
     .state('mm_login.credentials', {
@@ -83,7 +76,8 @@ angular.module('mm.core.login', [])
         cache: false,
         params: {
             siteurl: '',
-            username: ''
+            username: '',
+            infositeurl: ''
         }
     });
 
@@ -158,7 +152,7 @@ angular.module('mm.core.login', [])
                 } else {
                     var info = $mmSite.getInfo();
                     if (typeof(info) !== 'undefined' && typeof(info.username) !== 'undefined') {
-                        $state.go('mm_login.reconnect', {siteurl: siteurl, username: info.username});
+                        $state.go('mm_login.reconnect', {siteurl: siteurl, username: info.username, infositeurl: info.siteurl});
                     }
                 }
             });
