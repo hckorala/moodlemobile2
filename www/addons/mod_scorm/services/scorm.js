@@ -35,6 +35,16 @@ angular.module('mm.addons.mod_scorm')
     }
 
     /**
+     * Get cache key for scorm attempts WS calls.
+     *
+     * @param {Number} scormid Scorm ID.
+     * @return {String}         Cache key.
+    */
+    function getScormAttemptsCacheKey(scormid){
+        return 'mmaModScorm:scormAttempt' + scormid;
+    } 
+
+    /**
      * Return whether or not the plugin is enabled. Plugin is enabled if the forum WS are available.
      *
      * @module mm.addons.mod_scorm
@@ -89,6 +99,76 @@ angular.module('mm.addons.mod_scorm')
         });
     };
 
-    return self;
+    /**
+     * Get a scorm attempt.
+     *
+     * @module mm.addons.mod_scorm
+     * @ngdoc method
+     * @name $mmaModScorm#getScormAttempt
+     * @param {Number} scormid Scorm ID.
+     * @param {Number} userid     User ID.
+     * @return {Promise}        Promise resolved when the scorm is retrieved.
+    */
+    self.getScormAttempt = function(scormid,userid){
+        var params = {
+                scormid: scormid,
+                userid : userid
+            },
+            preSets = {
+                cacheKey: getScormAttemptsCacheKey(scormid)
+            };
 
+        return $mmSite.read('mod_scorm_get_scorm_attempts',params,preSets).then(function(attempts){
+            if(attempts){
+
+                var currentScormAttempt;
+
+                 angular.forEach(attempts, function(attempt) {
+                
+                    angular.forEach(attempt,function(key){
+                        currentScormAttempt = key;
+                    })
+                });
+                return currentScormAttempt;
+            }
+            else{
+                return $q.reject();   
+            }
+        });
+    };
+
+    /**
+     * Get a scorm user details.
+     *
+     * @module mm.addons.mod_scorm
+     * @ngdoc method
+     * @name $mmaModScorm#getScormUserDetails
+     * @param {Number} scormid Scorm ID.
+     * @param {Number} attemptid    Attempt ID.
+     * @return {Promise}        Promise resolved when the scorm is retrieved.
+    */
+    self.getScormUserDetails = function(scormid,attemptid){
+        var params = {
+                scormid: scormid,
+                attemptid: attemptid
+            },
+            preSets = {
+                cacheKey: {}
+            };
+
+        return $mmSite.read('mod_scorm_get_scorm_user_data',params,preSets).then(function(data){
+            if (data) {
+
+                var currentScormUserData;
+
+                currentScormUserData = data.userdata ;
+
+                return currentScormUserData;
+            }
+            else{
+                return $q.reject(); 
+            }
+        });   
+    };
+    return self;
 });
