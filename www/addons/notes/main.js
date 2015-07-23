@@ -14,10 +14,10 @@
 
 angular.module('mm.addons.notes', [])
 
-.value('mmaNotesPriority', 200)
-.value('mmaNotesAddNotePriority', 200)
+.constant('mmaNotesPriority', 200)
+.constant('mmaNotesAddNotePriority', 200)
 
-.config(function($stateProvider) {
+.config(function($stateProvider, $mmUserDelegateProvider, $mmCoursesDelegateProvider, mmaNotesPriority, mmaNotesAddNotePriority) {
 
     $stateProvider
 
@@ -47,23 +47,10 @@ angular.module('mm.addons.notes', [])
             type: null
         }
     });
-})
-
-.run(function($mmUserDelegate, $mmaNotesHandlers, $mmCoursesDelegate, $mmaNotes, mmaNotesPriority, mmaNotesAddNotePriority) {
-
-    // Register plugin on course list.
-    $mmCoursesDelegate.registerPlugin('mmaNotes', function() {
-
-        if ($mmaNotes.isPluginViewNotesEnabled()) {
-            return {
-                icon: 'ion-ios-list',
-                state: 'site.notes-types',
-                title: 'mma.notes.notes'
-            };
-        }
-    }, mmaNotesPriority);
 
     // Register plugin on user profile.
-    $mmUserDelegate.registerPlugin('mmaNotes:addNote', $mmaNotesHandlers.addNote, mmaNotesAddNotePriority);
+    $mmUserDelegateProvider.registerProfileHandler('mmaNotes:addNote', '$mmaNotesHandlers.addNote', mmaNotesAddNotePriority);
 
+    // Register courses handler.
+    $mmCoursesDelegateProvider.registerNavHandler('mmaNotes', '$mmaNotesHandlers.coursesNav', mmaNotesPriority);
 });
