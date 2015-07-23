@@ -14,10 +14,10 @@
 
 angular.module('mm.addons.grades', [])
 
-.value('mmaGradesPriority', 400)
-.value('mmaGradesViewGradesPriority', 400)
+.constant('mmaGradesPriority', 400)
+.constant('mmaGradesViewGradesPriority', 400)
 
-.config(function($stateProvider) {
+.config(function($stateProvider, $mmUserDelegateProvider, $mmCoursesDelegateProvider, mmaGradesPriority, mmaGradesViewGradesPriority) {
 
     $stateProvider
 
@@ -35,23 +35,10 @@ angular.module('mm.addons.grades', [])
         }
     });
 
-})
-.run(function($mmCoursesDelegate, $mmSite, $mmaGrades, $mmUserDelegate, $mmaGradesHandlers, mmaGradesPriority,
-            mmaGradesViewGradesPriority) {
-    // Register plugin on course list.
-    $mmCoursesDelegate.registerPlugin('mmaGrades', function() {
-
-        if ($mmaGrades.isPluginEnabled()) {
-            return {
-                icon: 'ion-stats-bars',
-                state: 'site.grades',
-                title: 'mma.grades.grades'
-            };
-        }
-
-        return undefined;
-    }, mmaGradesPriority);
 
     // Register plugin on user profile.
-    $mmUserDelegate.registerPlugin('mmaGrades:viewGrades', $mmaGradesHandlers.viewGrades, mmaGradesViewGradesPriority);
+    $mmUserDelegateProvider.registerProfileHandler('mmaGrades:viewGrades', '$mmaGradesHandlers.viewGrades', mmaGradesViewGradesPriority);
+
+    // Register courses content plugin.
+    $mmCoursesDelegateProvider.registerNavHandler('mmaGrades', '$mmaGradesHandlers.coursesNav', mmaGradesPriority);
 });
