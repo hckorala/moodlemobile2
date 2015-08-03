@@ -47,6 +47,8 @@ angular.module('mm.addons.mod_scorm')
                         time =  new Date().getTime(),
                         nowtime = Math.round(time/1000);
 
+                       var pac = downloadPackage(module);
+
                     if((timeopen) && timeopen > nowtime){
                         $scope.timeopenMessage = "Scorm package is not opened yet" ;
                         $scope.scormopen = false;
@@ -112,6 +114,12 @@ angular.module('mm.addons.mod_scorm')
         },function(message){
            $scope.errorMessage = message ;
         })
+    }
+
+    //function to download package 
+    function downloadPackage(module){
+        console.log("test download");
+        return $mmaModScorm.downloadScormPackage(module);
     }
 
     fetchScormData();
