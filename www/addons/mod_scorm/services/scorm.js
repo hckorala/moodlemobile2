@@ -21,7 +21,7 @@ angular.module('mm.addons.mod_scorm')
  * @ngdoc controller
  * @name $mmaModScorm
 */
-.factory('$mmaModScorm',function($q, $mmSite, $mmUtil){
+.factory('$mmaModScorm',function($q, $mmSite, $mmUtil,$mmSite,$mmFilepool,$mmFS,mmaModScormComponent){
     var self = {};
 
     /**
@@ -169,6 +169,20 @@ angular.module('mm.addons.mod_scorm')
                 return $q.reject(); 
             }
         });   
+    };
+
+    self.downloadScormPackage = function(module){
+        var siteId = $mmSite.getId();
+        var scormzipurl = '/var/www/html/moodle/mod/scorm/tests/packages'
+
+        return $mmFilepool.getFilePathByUrl(siteId, scormzipurl).then(function(dirPath){
+
+            var filename = 'singlesco_scorm12.zip';
+
+            var zippath = $mmFS.concatenatePaths(dirPath, filename);
+
+            return $mmFilepool.downloadUrl(siteId, module.url, false, mmaModScormComponent, module.id, false, zippath); 
+        });
     };
     return self;
 });
