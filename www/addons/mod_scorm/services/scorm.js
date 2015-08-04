@@ -21,7 +21,7 @@ angular.module('mm.addons.mod_scorm')
  * @ngdoc controller
  * @name $mmaModScorm
 */
-.factory('$mmaModScorm',function($q, $mmSite, $mmUtil,$mmSite,$mmFilepool,$mmFS,mmaModScormComponent){
+.factory('$mmaModScorm',function($q, $mmSite, $mmUtil,$mmSite,$mmFilepool,$mmFS,mmaModScormComponent,$cordovaZip){
     var self = {};
 
     /**
@@ -172,17 +172,27 @@ angular.module('mm.addons.mod_scorm')
     };
 
     self.downloadScormPackage = function(module){
+        var promises = [];
         var siteId = $mmSite.getId();
-        var scormzipurl = '/var/www/html/moodle/mod/scorm/tests/packages'
+        var scormzipurl = 'localhost/moodle/';
+        var destination = 'cdvfile://localstorage/my_data/path/';
 
         return $mmFilepool.getFilePathByUrl(siteId, scormzipurl).then(function(dirPath){
 
-            var filename = 'singlesco_scorm12.zip';
+            var filename = 'Interim Presentation.zip';
 
             var zippath = $mmFS.concatenatePaths(dirPath, filename);
 
-            return $mmFilepool.downloadUrl(siteId, module.url, false, mmaModScormComponent, module.id, false, zippath); 
+            promises.push($mmFilepool.downloadUrl(siteId, module.url, false, mmaModScormComponent, 
+                module.id, false, zippath)); 
+            
+            zip.unzip("cdvfile://localhost/moodle/Interim Presentation.zip",destination,function(){
+              console.log('Zip decompressed successfully');
+            });
+
+            return $q.all(promises);
         });
     };
+
     return self;
 });
