@@ -14,6 +14,8 @@ var fs = require('fs');
 var through = require('through');
 var path = require('path');
 var File = gutil.File;
+var gulpSlash = require('gulp-slash');
+var ngAnnotate = require('gulp-ng-annotate');
 
 var license = '' +
   '// (C) Copyright 2015 Martin Dougiamas\n' +
@@ -97,6 +99,7 @@ gulp.task('build', function() {
       pluginRegex = /addons\/([^\/]+)\/main.js/;
 
   gulp.src(paths.js)
+    .pipe(gulpSlash())
     .pipe(clipEmptyFiles())
     .pipe(tap(function(file, t) {
       if (componentRegex.test(file.path)) {
@@ -109,6 +112,7 @@ gulp.task('build', function() {
     // Remove comments, remove empty lines, concat and add license.
     .pipe(stripComments())
     .pipe(removeEmptyLines())
+    .pipe(ngAnnotate()) // This step fixes DI declarations for FirefoxOS.
     .pipe(concat('mm.bundle.js'))
     .pipe(insert.prepend(license))
 
@@ -215,6 +219,7 @@ gulp.task('lang', function() {
     var firstFile = null;
 
     gulp.src(langpaths)
+      .pipe(gulpSlash())
       .pipe(clipEmptyFiles())
       .pipe(through(function(file) {
         if (!firstFile) {

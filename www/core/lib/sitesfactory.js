@@ -115,8 +115,8 @@ angular.module('mm.core')
         return exists;
     }
 
-    this.$get = function($http, $q, $mmWS, $mmDB, $mmConfig, $log, md5, $mmApp, $mmLang, $mmUtil, $mmFS,
-        mmCoreWSCacheStore, mmCoreWSPrefix, mmCoreSessionExpired, $mmEvents, mmCoreEventSessionExpired) {
+    this.$get = function($http, $q, $mmWS, $mmDB, $mmConfig, $log, md5, $mmApp, $mmLang, $mmUtil, $mmFS, mmCoreWSCacheStore,
+            mmCoreWSPrefix, mmCoreSessionExpired, $mmEvents, mmCoreEventSessionExpired, mmCoreUserDeleted, mmCoreEventUserDeleted) {
 
         $log = $log.getInstance('$mmSite');
 
@@ -473,6 +473,10 @@ angular.module('mm.core')
                         // Session expired, trigger event.
                         $mmLang.translateAndRejectDeferred(deferred, 'mm.core.lostconnection');
                         $mmEvents.trigger(mmCoreEventSessionExpired, site.id);
+                    } else if (error === mmCoreUserDeleted) {
+                        // User deleted, trigger event.
+                        $mmLang.translateErrorAndReject(deferred, 'mm.core.userdeleted');
+                        $mmEvents.trigger(mmCoreEventUserDeleted, {siteid: site.id, params: data});
                     } else if (typeof preSets.emergencyCache !== 'undefined' && !preSets.emergencyCache) {
                         $log.debug('WS call ' + method + ' failed. Emergency cache is forbidden, rejecting.');
                         deferred.reject(error);
@@ -668,6 +672,7 @@ angular.module('mm.core')
          * @return {Promise} Promise resolved when the check is done. Resolve params:
          *                           - {Number} code Code to identify the authentication method to use.
          *                           - {String} [service] If defined, name of the service to use.
+         *                           - {String} [warning] If defined, code of the warning message.
          */
         Site.prototype.checkLocalMobilePlugin = function() {
             var siteurl = this.siteurl;
@@ -678,7 +683,8 @@ angular.module('mm.core')
                     var data = response.data;
 
                     if (typeof data == 'undefined' || typeof data.code == 'undefined') {
-                        return $mmLang.translateAndReject('mm.core.unexpectederror');
+                        // local_mobile returned something we didn't expect. Let's assume it's not installed.
+                        return {code: 0, warning: 'mm.login.localmobileunexpectedresponse'};
                     }
 
                     var code = parseInt(data.code, 10);
@@ -692,7 +698,7 @@ angular.module('mm.core')
                                 return $mmLang.translateAndReject('mm.login.webservicesnotenabled');
                             case 3:
                                 // Extended service not enabled, but the official is enabled.
-                                return 0;
+                                return {code: 0};
                             case 4:
                                 // Neither extended or official services enabled.
                                 return $mmLang.translateAndReject('mm.login.mobileservicesnotenabled');
@@ -726,7 +732,6 @@ angular.module('mm.core')
 
             if (appUsesLocalMobile) {
                 // App already uses local_mobile, it wasn't added.
-                console.log('APP ALREADY USES LOCAL MOBILE');
                 return $q.reject();
             }
 
