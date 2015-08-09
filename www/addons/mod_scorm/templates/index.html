@@ -2,6 +2,11 @@
     <ion-nav-title>
     <p><mm-format-text watch="true" clean="true" shorten="150">{{title}}</mm-format-text></p>
     </ion-nav-title>
+    <ion-nav-buttons side="secondary">
+        <a ng-href="{{moduleurl}}" class="button button-icon ion-ios-browsers-outline" mm-browser></a>
+        <button class="button button-icon ion-more" ng-click="popover.show($event)">
+        </button>
+    </ion-nav-buttons>
     <ion-content>
         <mm-course-mod-description watch="true" description="description"></mm-course-mod-description>
         <div class="list">
@@ -25,7 +30,8 @@
                     <p>{{timeopenMessage}}</P>  
                     <p>{{errorMessage}}</p>
                 </div>
-            </div>
+            </div>   
         </div>
+        <mm-iframe src="src"></mm-iframe>
     </ion-content>
 </ion-view>
