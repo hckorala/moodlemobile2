@@ -14,7 +14,7 @@
 
 angular.module('mm.addons.mod_scorm')
         
-.controller('mmaModScormDetailsCtrl', function($scope, $stateParams, $mmaModScorm, $mmSite, $mmUtil){
+.controller('mmaModScormDetailsCtrl', function($scope, $stateParams, $mmaModScorm, $mmSite, $mmUtil,$ionicPopover,$q){
 
     var module = $stateParams.module || {},
         courseid = $stateParams.courseid ;
@@ -24,6 +24,16 @@ angular.module('mm.addons.mod_scorm')
     $scope.moduleurl = module.url;
     $scope.courseid = courseid;
     $scope.userid = $mmSite.getUserId();
+    $scope.items = [ {"href":"InterimPresentation/res/data/index.html","title":"Introduction","level":0},
+    {"href":"waves-sample-assets/Second.html","title":"Second","level":1},
+    {"href":"waves-sample-assets/Third.html","title":"Third","level":1},
+    {"href":"waves-sample-assets/Fourth.html","title":"Fourth","level":1},
+    {"href":"waves-sample-assets/Fifth.html","title":"Fifth","level":1},
+    {"href":"waves-sample-assets/Sixth.html","title":"Sixth","level":1},
+    {"href":"waves-sample-assets/Seventh.html","title":"Seventh","level":1},
+    {"href":"waves-sample-assets/Eigth.html","title":"Eigth","level":1},
+    {"href":"waves-sample-assets/Ninth.html","title":"Ninth","level":1},
+    {"href":"waves-sample-assets/Tenth.html","title":"Tenth","level":1}];
 
     //Function to get scorm package data and handle errors when data is not recieved or incorrect
     function fetchScormData(){
@@ -48,6 +58,17 @@ angular.module('mm.addons.mod_scorm')
                         nowtime = Math.round(time/1000);
 
                        var pac = downloadPackage(module);
+
+                       var filepath = "file:///home/harindu/Downloads/Interim Presentation/";
+
+                       $mmaModScorm.getIframeSrc(filepath,$scope.moduleurl).then(function(src){
+                        var source = src ;
+                        console.log(source);
+
+                       }).catch(function(){
+                            return $q.reject();
+                       });
+                       
 
                     if((timeopen) && timeopen > nowtime){
                         $scope.timeopenMessage = "Scorm package is not opened yet" ;
@@ -121,6 +142,22 @@ angular.module('mm.addons.mod_scorm')
         console.log("test download");
         return $mmaModScorm.downloadScormPackage(module);
     }
+
+    $ionicPopover.fromTemplateUrl('addons/mod_scorm/templates/toc.html', {
+        scope: $scope,
+    }).then(function(popover) {
+        $scope.popover = popover;
+    });
+
+    $scope.getNumberForPadding = function(n) {
+        return new Array(n);
+    };
+
+    $scope.loadItem = function(src){
+        $scope.popover.hide();
+        $scope.src = src ; 
+    }
+
 
     fetchScormData();
 
