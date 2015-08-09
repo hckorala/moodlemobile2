@@ -194,5 +194,76 @@ angular.module('mm.addons.mod_scorm')
         });
     };
 
+    self.loadManifest = function(fullpath){
+        var xmlDoc  =  fullpath + "/imsmanifest.xml";
+        console.log(xmlDoc);
+
+            try
+            {
+                var m = xmlDoc.getElementsByTagName("manifest")[0];
+                var orgs = xmlDoc.getElementsByTagName("organizations")[0];
+                var org = orgs.getElementsByTagName("organization")[0];
+                var orgTitle = org.getElementsByTagName("title")[0].firstChild.nodeValue;
+                var items = org.getElementsByTagName("item");
+                var item = items[0];
+                var itemTitle = item.getElementsByTagName("title")[0].firstChild.nodeValue;
+                var itemMasteryScore = item.getElementsByTagName("adlcp:masteryscore")[0].firstChild.nodeValue;
+                var itemIdentifier = item.getAttribute("identifier");
+                var itemIdentifierRef = item.getAttribute("identifierref");
+
+                var resources = xmlDoc.getElementsByTagName("resources")[0];
+                var resource = resources.getElementsByTagName("resource");
+                var itemResource = null;
+
+                for(var i=0;i<resource.length;i++)
+                {
+                    var id = resource[i].getAttribute("identifier");
+                    var scormtype = resource[i].getAttribute("adlcp:scormtype");
+                    
+                    if(id == itemIdentifierRef && scormtype.toLowerCase() == "sco")
+                    {
+                        itemResource = resource[i];
+                    }
+                }
+                var itemResourceHref = itemResource.getAttribute("href");
+
+                var obj = {};
+                    obj.id = m.getAttribute("identifier");
+                    obj.orgTitle = orgTitle;
+                    obj.itemTitle = itemTitle;
+                    obj.itemMasteryScore = itemMasteryScore;
+                    obj.itemResourceHref = itemResourceHref;
+
+                return obj;
+            }
+            catch(e)
+            {
+                error=e.message;
+                console.log("Error reading imsmanifest.xml" + error);
+                return false;
+            }
+        };
+
+    self.getIframeSrc = function(filepath,url) {
+        var toc = self.loadManifest(filepath);
+        var mainFilePath = toc.itemResourceHref;
+
+        return $mmFilepool.getDirectoryUrlByUrl($mmSite.getId(), url).then(function(dirPath) {
+            currentDirPath = dirPath;
+            return $mmFS.concatenatePaths(dirPath, mainFilePath);
+        }, function() {
+            // Error getting directory, there was an error downloading or we're in browser. Return online URL if connected.
+           /* if ($mmApp.isOnline()) {
+                var indexUrl = self._getFileUrlFromContents(module.contents, mainFilePath);
+                if (indexUrl) {
+                    // This URL is going to be injected in an iframe, we need this to make it work.
+                    return $sce.trustAsResourceUrl($mmSite.fixPluginfileURL(indexUrl));
+                }
+            }*/
+            return $q.reject();
+        });
+    };
+
+
     return self;
 });
