@@ -174,8 +174,8 @@ angular.module('mm.addons.mod_scorm')
     self.downloadScormPackage = function(module){
         var promises = [];
         var siteId = $mmSite.getId();
-        var scormzipurl = 'localhost/moodle/';
-        var destination = 'cdvfile://localstorage/my_data/path/';
+        var scormzipurl = '192.168.56.1/moodle/';
+        
 
         return $mmFilepool.getFilePathByUrl(siteId, scormzipurl).then(function(dirPath){
 
@@ -186,16 +186,15 @@ angular.module('mm.addons.mod_scorm')
             promises.push($mmFilepool.downloadUrl(siteId, module.url, false, mmaModScormComponent, 
                 module.id, false, zippath)); 
             
-            zip.unzip("cdvfile://localhost/moodle/Interim Presentation.zip",destination,function(){
-              console.log('Zip decompressed successfully');
+            return $q.all(promises);
+
             });
 
-            return $q.all(promises);
-        });
+        
     };
 
     self.loadManifest = function(fullpath){
-        var xmlDoc  =  fullpath + "/imsmanifest.xml";
+        var xmlDoc  =  fullpath + "imsmanifest.xml";
         console.log(xmlDoc);
 
             try
