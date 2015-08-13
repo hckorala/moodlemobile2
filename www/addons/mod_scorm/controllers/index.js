@@ -14,7 +14,7 @@
 
 angular.module('mm.addons.mod_scorm')
         
-.controller('mmaModScormDetailsCtrl', function($scope, $stateParams, $mmaModScorm, $mmSite, $mmUtil,$ionicPopover,$q){
+.controller('mmaModScormDetailsCtrl', function($scope, $stateParams, $mmaModScorm, $mmSite, $mmUtil,$ionicPopover,$q,$cordovaZip,$ionicPlatform){
 
     var module = $stateParams.module || {},
         courseid = $stateParams.courseid ;
@@ -57,9 +57,21 @@ angular.module('mm.addons.mod_scorm')
                         time =  new Date().getTime(),
                         nowtime = Math.round(time/1000);
 
-                       var pac = downloadPackage(module);
+                        var filepath = "file:///home/harindu/Downloads/Interim Presentation/";
 
-                       var filepath = "file:///home/harindu/Downloads/Interim Presentation/";
+                        $mmaModScorm.downloadScormPackage(module).catch(function(response){
+                            console.log("downloaing fail" + response);
+                        }).finally(function(){
+                            $ionicPlatform.ready(function() {
+                                $cordovaZip.unzip('cdfile://192.168.56.1/moodle/Interim Presentation.zip','file:///storage/emulated/o/Android/data/com.moodle.moodlemobile/files').then(function(noerror){
+                                console.log("Succeess" + noerror);
+                                },function(error){
+                                console.log("Error" + error);
+                                },function(update){
+                                console.log("Notify" + update);
+                                });
+                            });
+                        });
 
                        $mmaModScorm.getIframeSrc(filepath,$scope.moduleurl).then(function(src){
                         var source = src ;
@@ -138,10 +150,11 @@ angular.module('mm.addons.mod_scorm')
     }
 
     //function to download package 
-    function downloadPackage(module){
+   /* function downloadPackage(module){
         console.log("test download");
         return $mmaModScorm.downloadScormPackage(module);
     }
+    */
 
     $ionicPopover.fromTemplateUrl('addons/mod_scorm/templates/toc.html', {
         scope: $scope,
@@ -158,6 +171,7 @@ angular.module('mm.addons.mod_scorm')
         $scope.src = src ; 
     }
 
+    
 
     fetchScormData();
 
